@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Kodyan JURI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            /* Paleta IDÉNTICA a la maqueta */
+            --azul-marina: #1A365D;
+            --azul-profundo: #2D3748;
+            --azul-celeste: #4299E1;
+            --gris-carbón: #4A5568;
+            --gris-plata: #A0AEC0;
+            --gris-humo: #EDF2F7;
+            --blanco: #FFFFFF;
+            --dorado-balanza: #D4AF37;
+            --urgente: #E53E3E;
+            --alerta: #DD6B20;
+            --ok: #38A169;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gris-humo);
+            color: var(--azul-profundo);
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--azul-marina);
+            color: var(--blanco);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--azul-celeste);
+        }
+
+        .logo-icon {
+            color: var(--dorado-balanza);
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin: 1rem 0;
+        }
+
+        .menu-link {
+            color: var(--blanco);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .menu-link:hover, .menu-link.active {
+            background: var(--azul-celeste);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--azul-celeste);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            color: var(--azul-marina);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .see-all {
+            color: var(--azul-celeste);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .alert-item, .agenda-item, .expediente-item, .cliente-item {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--gris-humo);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 1rem;
+            background: var(--gris-humo);
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--azul-marina);
+        }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR CON LINKS REALES -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚖️</span>
+            <span class="logo-text">Kodyan JURI</span>
+        </div>
+        
+        <ul class="menu">
+            <li class="menu-item">
+                <a href="home-juri.html" class="menu-link active">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="expedientes.html" class="menu-link">
+                    <i class="fas fa-folder"></i> Expedientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html" class="menu-link">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="agenda.html" class="menu-link">
+                    <i class="fas fa-calendar"></i> Agenda
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="finanzas.html" class="menu-link">
+                    <i class="fas fa-chart-line"></i> Finanzas
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="logout()" class="menu-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL CON DATOS REALES -->
+    <main class="main-content">
+        <header class="header">
+            <div class="welcome">
+                <h1 id="bienvenida-usuario">Cargando...</h1>
+                <p id="fecha-actual"></p>
+            </div>
+            <div class="user-menu">
+                <span id="notificaciones-contador" class="notification-badge" style="display: none;">0</span>
+                <div class="user-avatar">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- ALERTAS DINÁMICAS -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-exclamation-triangle"></i> Alertas Urgentes</h2>
+            </div>
+            <div id="alertas-container">
+                <div class="loading">Cargando alertas...</div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD GRID DINÁMICO -->
+        <div class="dashboard-grid">
+            <!-- AGENDA DEL DÍA -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-calendar-day"></i> Agenda de Hoy</h2>
+                    <a href="agenda.html" class="see-all">Ver toda</a>
+                </div>
+                <div id="agenda-hoy-container">
+                    <div class="loading">Cargando agenda...</div>
+                </div>
+            </section>
+
+            <!-- EXPEDIENTES ACTIVOS -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-folder-open"></i> Expedientes Activos</h2>
+                    <a href="expedientes.html" class="see-all">Ver todos</a>
+                </div>
+                <div id="expedientes-container">
+                    <div class="loading">Cargando expedientes...</div>
+                </div>
+            </section>
+
+            <!-- MÉTRICAS DINÁMICAS -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-chart-bar"></i> Resumen del Mes</h2>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div id="metric-casos" class="metric-value">0</div>
+                        <div class="metric-label">Casos Activos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div id="metric-facturacion" class="metric-value">$0</div>
+                        <div class="metric-label">Facturación</div>
+                    </div>
+                    <div class="metric-card">
+                        <div id="metric-audiencias" class="metric-value">0</div>
+                        <div class="metric-label">Audiencias</div>
+                    </div>
+                    <div class="metric-card">
+                        <div id="metric-clientes" class="metric-value">0</div>
+                        <div class="metric-label">Clientes Nuevos</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CLIENTES RECIENTES -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-user-plus"></i> Clientes Recientes</h2>
+                    <a href="clientes.html" class="see-all">Ver todos</a>
+                </div>
+                <div id="clientes-container">
+                    <div class="loading">Cargando clientes...</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        // ===== FUNCIONES REALES PARA CARGAR DATOS =====
+        
+        async function cargarDatosUsuario() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('bienvenida-usuario').textContent = 
+                    `Buenos días, ${user.email.split('@')[0]}`;
+            }
+            
+            // Fecha actual
+            const ahora = new Date();
+            document.getElementById('fecha-actual').textContent = 
+                ahora.toLocaleDateString('es-AR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+        }
+
+        async function cargarAlertas() {
+            const { data: alertas, error } = await supabase
+                .from('alertas')
+                .select('*')
+                .eq('estado', 'pendiente')
+                .order('fecha_vencimiento', { ascending: true })
+                .limit(5);
+
+            if (error) {
+                console.error('Error cargando alertas:', error);
+                return;
+            }
+
+            const container = document.getElementById('alertas-container');
+            if (alertas.length === 0) {
+                container.innerHTML = '<div class="alert-item">No hay alertas urgentes</div>';
+                return;
+            }
+
+            let html = '';
+            alertas.forEach(alerta => {
+                html += `
+                    <div class="alert-item">
+                        <i class="fas fa-${alerta.tipo === 'vencimiento' ? 'clock' : 'balance-scale'} alert-icon"></i>
+                        <div>
+                            <strong>${alerta.titulo}</strong>
+                            <br><small>${alerta.descripcion}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function cargarAgendaHoy() {
+            const hoy = new Date().toISOString().split('T')[0];
+            const { data: eventos, error } = await supabase
+                .from('agenda')
+                .select('*')
+                .eq('fecha', hoy)
+                .order('hora', { ascending: true })
+                .limit(5);
+
+            const container = document.getElementById('agenda-hoy-container');
+            if (error || !eventos || eventos.length === 0) {
+                container.innerHTML = '<div class="agenda-item">No hay eventos para hoy</div>';
+                return;
+            }
+
+            let html = '';
+            eventos.forEach(evento => {
+                html += `
+                    <div class="agenda-item">
+                        <span class="agenda-time">${evento.hora}</span>
+                        <div class="agenda-details">
+                            <strong>${evento.titulo}</strong>
+                            <br><small>${evento.descripcion}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function cargarMetricas() {
+            // Aquí cargaremos datos reales de las métricas
+            // Por ahora datos de ejemplo
+            document.getElementById('metric-casos').textContent = '12';
+            document.getElementById('metric-facturacion').textContent = '$85.240';
+            document.getElementById('metric-audiencias').textContent = '5';
+            document.getElementById('metric-clientes').textContent = '3';
+        }
+
+        // ===== INICIALIZACIÓN =====
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarDatosUsuario();
+            cargarAlertas();
+            cargarAgendaHoy();
+            cargarMetricas();
+            // Aquí cargaríamos expedientes y clientes también
+        });
+
+        async function logout() {
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+                window.location.href = 'login-juri.html';
+            }
+        }
+    </script>
+</body>
+</html>
