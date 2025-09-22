@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expedientes - Kodyan JURI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --azul-marina: #1A365D;
+            --azul-profundo: #2D3748;
+            --azul-celeste: #4299E1;
+            --gris-carbón: #4A5568;
+            --gris-humo: #EDF2F7;
+            --blanco: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gris-humo);
+            color: var(--azul-profundo);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--azul-marina);
+            color: var(--blanco);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--gris-humo);
+            border-radius: 6px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .expedientes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .expediente-card {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--azul-celeste);
+        }
+
+        .expediente-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .expediente-numero {
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: var(--azul-marina);
+            font-weight: bold;
+        }
+
+        .expediente-estado {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .estado-activo { background: #C6F6D5; color: #276749; }
+        .estado-archivado { background: #E9D8FD; color: #553C9A; }
+        .estado-vencido { background: #FED7D7; color: #C53030; }
+
+        .expediente-cliente {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .expediente-details {
+            color: var(--gris-carbón);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .expediente-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--gris-humo);
+            background: var(--blanco);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar (igual que dashboard) -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚖️</span>
+            <span class="logo-text">Kodyan JURI</span>
+        </div>
+        
+        <ul class="menu">
+            <li><a href="home-juri.html" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="expedientes.html" class="menu-link active"><i class="fas fa-folder"></i> Expedientes</a></li>
+            <li><a href="clientes.html" class="menu-link"><i class="fas fa-users"></i> Clientes</a></li>
+            <li><a href="agenda.html" class="menu-link"><i class="fas fa-calendar"></i> Agenda</a></li>
+            <li><a href="#" onclick="logout()" class="menu-link"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-folder"></i> Gestión de Expedientes</h1>
+            <div class="page-actions">
+                <a href="nuevo-expediente.html" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Expediente
+                </a>
+            </div>
+        </header>
+
+        <!-- Búsqueda y Filtros -->
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="Buscar por número, cliente o descripción...">
+            <button class="btn btn-primary">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active">Todos</button>
+            <button class="filter-btn">Activos</button>
+            <button class="filter-btn">Archivados</button>
+            <button class="filter-btn">Vencidos</button>
+        </div>
+
+        <!-- Lista de Expedientes -->
+        <div class="expedientes-grid" id="expedientes-container">
+            <div class="loading">Cargando expedientes...</div>
+        </div>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        // Cargar expedientes del abogado logueado
+        async function cargarExpedientes() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                window.location.href = 'login-juri.html';
+                return;
+            }
+
+            const { data: expedientes, error } = await supabase
+                .from('expedientes')
+                .select(`
+                    *,
+                    clientes (nombre, apellido)
+                `)
+                .eq('abogado_id', user.id)
+                .order('created_at', { ascending: false });
+
+            const container = document.getElementById('expedientes-container');
+            
+            if (error) {
+                container.innerHTML = '<div class="error">Error cargando expedientes</div>';
+                return;
+            }
+
+            if (expedientes.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--gris-carbón); margin-bottom: 1rem;"></i>
+                        <h3>No hay expedientes</h3>
+                        <p>Comienza creando tu primer expediente</p>
+                        <a href="nuevo-expediente.html" class="btn btn-primary">Crear Primer Expediente</a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            expedientes.forEach(expediente => {
+                const estadoClass = `estado-${expediente.estado}`;
+                
+                html += `
+                    <div class="expediente-card">
+                        <div class="expediente-header">
+                            <div class="expediente-numero">${expediente.numero_expediente}</div>
+                            <span class="expediente-estado ${estadoClass}">${expediente.estado}</span>
+                        </div>
+                        
+                        <div class="expediente-cliente">
+                            ${expediente.clientes.nombre} ${expediente.clientes.apellido}
+                        </div>
+                        
+                        <div class="expediente-details">
+                            <strong>Materia:</strong> ${expediente.materia}<br>
+                            <strong>Juzgado:</strong> ${expediente.juzgado}<br>
+                            <strong>Última actualización:</strong> ${new Date(expediente.updated_at).toLocaleDateString('es-AR')}
+                        </div>
+                        
+                        <div class="expediente-actions">
+                            <button class="action-btn" onclick="verExpediente('${expediente.id}')">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="action-btn" onclick="editarExpediente('${expediente.id}')">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function verExpediente(id) {
+            window.location.href = `expediente-detalle.html?id=${id}`;
+        }
+
+        function editarExpediente(id) {
+            window.location.href = `editar-expediente.html?id=${id}`;
+        }
+
+        // Cargar expedientes al iniciar
+        document.addEventListener('DOMContentLoaded', cargarExpedientes);
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login-juri.html';
+        }
+    </script>
+</body>
+</html>
