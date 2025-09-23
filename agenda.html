@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Legal - Kodyan JURI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --azul-marina: #1A365D;
+            --azul-profundo: #2D3748;
+            --azul-celeste: #4299E1;
+            --gris-carbón: #4A5568;
+            --gris-humo: #EDF2F7;
+            --blanco: #FFFFFF;
+            --dorado-balanza: #D4AF37;
+            --urgente: #E53E3E;
+            --importante: #DD6B20;
+            --normal: #38A169;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gris-humo);
+            color: var(--azul-profundo);
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--azul-marina);
+            color: var(--blanco);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--azul-celeste);
+        }
+
+        .logo-icon {
+            color: var(--dorado-balanza);
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin: 1rem 0;
+        }
+
+        .menu-link {
+            color: var(--blanco);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .menu-link:hover, .menu-link.active {
+            background: var(--azul-celeste);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            color: var(--azul-marina);
+            font-size: 2rem;
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .view-btn.active {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .current-date {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--azul-marina);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover {
+            background: var(--azul-marina);
+        }
+
+        /* VISTA SEMANA */
+        .week-view {
+            background: var(--blanco);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .week-header {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 1fr);
+            background: var(--azul-marina);
+            color: var(--blanco);
+        }
+
+        .time-column {
+            padding: 1rem;
+            font-weight: bold;
+            border-right: 1px solid var(--azul-celeste);
+        }
+
+        .day-header {
+            padding: 1rem;
+            text-align: center;
+            border-right: 1px solid var(--azul-celeste);
+        }
+
+        .day-header:last-child {
+            border-right: none;
+        }
+
+        .day-name {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .day-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .week-body {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 1fr);
+            height: 600px;
+            overflow-y: auto;
+        }
+
+        .time-slots {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .time-slot {
+            flex: 1;
+            border-bottom: 1px solid var(--gris-humo);
+            border-right: 1px solid var(--gris-humo);
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--gris-carbón);
+        }
+
+        .day-column {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--gris-humo);
+        }
+
+        .day-column:last-child {
+            border-right: none;
+        }
+
+        .day-slot {
+            flex: 1;
+            border-bottom: 1px solid var(--gris-humo);
+            position: relative;
+            min-height: 40px;
+        }
+
+        .event {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .event.audiencia {
+            background: #FED7D7;
+            color: #C53030;
+            border-left: 3px solid var(--urgente);
+        }
+
+        .event.consulta {
+            background: #FEEBC8;
+            color: #DD6B20;
+            border-left: 3px solid var(--importante);
+        }
+
+        .event.plazo {
+            background: #C6F6D5;
+            color: #276749;
+            border-left: 3px solid var(--normal);
+        }
+
+        /* VISTA MES */
+        .month-view {
+            display: none;
+            background: var(--blanco);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--gris-humo);
+            border: 1px solid var(--gris-humo);
+        }
+
+        .month-day {
+            background: var(--blanco);
+            padding: 0.5rem;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .month-day.other-month {
+            background: #F7FAFC;
+            color: var(--gris-plata);
+        }
+
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .month-event {
+            font-size: 0.7rem;
+            padding: 2px 4px;
+            margin-bottom: 2px;
+            border-radius: 2px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        /* VISTA LISTA */
+        .list-view {
+            display: none;
+            background: var(--blanco);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .event-list {
+            list-style: none;
+        }
+
+        .event-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gris-humo);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-time {
+            font-weight: bold;
+            color: var(--azul-marina);
+            margin-right: 1rem;
+        }
+
+        .event-title {
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+
+        .event-details {
+            font-size: 0.9rem;
+            color: var(--gris-carbón);
+        }
+
+        .event-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .week-body {
+                height: 400px;
+            }
+            
+            .time-slot {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚖️</span>
+            <span class="logo-text">Kodyan JURI</span>
+        </div>
+        
+        <ul class="menu">
+            <li class="menu-item">
+                <a href="home-juri.html" class="menu-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="expedientes.html" class="menu-link">
+                    <i class="fas fa-folder"></i> Expedientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html" class="menu-link">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="agenda.html" class="menu-link active">
+                    <i class="fas fa-calendar"></i> Agenda
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="finanzas.html" class="menu-link">
+                    <i class="fas fa-chart-line"></i> Finanzas
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="logout()" class="menu-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <header class="header">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-alt"></i> Agenda Legal
+            </h1>
+            
+            <div class="view-controls">
+                <div class="nav-buttons">
+                    <button class="btn" onclick="changeDate(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="current-date" id="currentDate">Cargando...</span>
+                    <button class="btn" onclick="changeDate(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div>
+                    <button class="view-btn active" onclick="changeView('week')">
+                        <i class="fas fa-calendar-week"></i> Semana
+                    </button>
+                    <button class="view-btn" onclick="changeView('month')">
+                        <i class="fas fa-calendar"></i> Mes
+                    </button>
+                    <button class="view-btn" onclick="changeView('list')">
+                        <i class="fas fa-list"></i> Lista
+                    </button>
+                </div>
+                
+                <a href="nuevo-evento.html" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Evento
+                </a>
+            </div>
+        </header>
+
+        <!-- Filtros -->
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterEvents('all')">Todos</button>
+            <button class="filter-btn" onclick="filterEvents('audiencia')">Audiencias</button>
+            <button class="filter-btn" onclick="filterEvents('consulta')">Consultas</button>
+            <button class="filter-btn" onclick="filterEvents('plazo')">Plazos</button>
+            <button class="filter-btn" onclick="filterEvents('urgent')">Urgentes</button>
+        </div>
+
+        <!-- Vista Semana (Default) -->
+        <section id="weekView" class="week-view">
+            <div class="week-header">
+                <div class="time-column">Hora</div>
+                <!-- Los días se generan dinámicamente -->
+            </div>
+            <div class="week-body">
+                <div class="time-slots">
+                    <!-- Las horas se generan dinámicamente -->
+                </div>
+                <!-- Las columnas de días se generan dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Vista Mes -->
+        <section id="monthView" class="month-view">
+            <div class="month-grid">
+                <!-- Los días del mes se generan dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Vista Lista -->
+        <section id="listView" class="list-view">
+            <ul class="event-list" id="eventList">
+                <li class="event-item">
+                    <div class="event-info">
+                        <span class="event-time">10:00</span>
+                        <span class="event-title">Audiencia: Pérez vs. Rodríguez</span>
+                        <div class="event-details">Juzgado Civil N°5 - Sala 2</div>
+                    </div>
+                    <span class="event-badge" style="background: #FED7D7; color: #C53030;">Audiencia</span>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        let currentDate = new Date();
+        let currentView = 'week';
+        let eventos = [];
+
+        // Inicializar agenda
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarEventos();
+            updateDisplay();
+        });
+
+        // Cargar eventos del abogado
+        async function cargarEventos() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                window.location.href = 'login-juri.html';
+                return;
+            }
+
+            try {
+                // Obtener eventos de la semana actual
+                const startOfWeek = new Date(currentDate);
+                startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23, 59, 59, 999);
+
+                const { data, error } = await supabase
+                    .from('eventos_agenda')
+                    .select(`
+                        *,
+                        expedientes (numero_expediente, clientes (nombre, apellido))
+                    `)
+                    .eq('abogado_id', user.id)
+                    .gte('fecha_hora', startOfWeek.toISOString())
+                    .lte('fecha_hora', endOfWeek.toISOString())
+                    .order('fecha_hora', { ascending: true });
+
+                if (error) throw error;
+
+                eventos = data || [];
+                renderEvents();
+
+            } catch (error) {
+                console.error('Error cargando eventos:', error);
+            }
+        }
+
+        // Cambiar vista
+        function changeView(view) {
+            currentView = view;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Ocultar todas las vistas
+            document.getElementById('weekView').style.display = 'none';
+            document.getElementById('monthView').style.display = 'none';
+            document.getElementById('listView').style.display = 'none';
+            
+            // Mostrar vista seleccionada
+            document.getElementById(view + 'View').style.display = 'block';
+            
+            updateDisplay();
+        }
+
+        // Cambiar fecha
+        function changeDate(direction) {
+            if (currentView === 'week') {
+                currentDate.setDate(currentDate.getDate() + (direction * 7));
+            } else if (currentView === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + direction);
+            } else {
+                currentDate.setDate(currentDate.getDate() + direction);
+            }
+            
+            updateDisplay();
+            cargarEventos();
+        }
+
+        // Actualizar display
+        function updateDisplay() {
+            const dateElement = document.getElementById('currentDate');
+            
+            if (currentView === 'week') {
+                const startOfWeek = new Date(currentDate);
+                startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+                
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                
+                dateElement.textContent = 
+                    `${startOfWeek.toLocaleDateString('es-AR')} - ${endOfWeek.toLocaleDateString('es-AR')}`;
+                renderWeekView();
+                
+            } else if (currentView === 'month') {
+                dateElement.textContent = currentDate.toLocaleDateString('es-AR', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                renderMonthView();
+                
+            } else {
+                dateElement.textContent = currentDate.toLocaleDateString('es-AR', { 
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                renderListView();
+            }
+        }
+
+        // Renderizar vista semana
+        function renderWeekView() {
+            const weekHeader = document.querySelector('.week-header');
+            const weekBody = document.querySelector('.week-body');
+            const timeSlots = document.querySelector('.time-slots');
+            
+            // Limpiar
+            weekHeader.innerHTML = '<div class="time-column">Hora</div>';
+            weekBody.innerHTML = '';
+            timeSlots.innerHTML = '';
+            
+            // Generar encabezados de días
+            const startOfWeek = new Date(currentDate);
+            startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+            
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startOfWeek);
+                day.setDate(startOfWeek.getDate() + i);
+                
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.innerHTML = `
+                    <div class="day-name">${day.toLocaleDateString('es-AR', { weekday: 'short' })}</div>
+                    <div class="day-number">${day.getDate()}</div>
+                `;
+                weekHeader.appendChild(dayHeader);
+            }
+            
+            // Generar slots de tiempo
+            for (let hour = 8; hour <= 20; hour++) {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                timeSlot.textContent = `${hour}:00`;
+                timeSlots.appendChild(timeSlot);
+            }
+            
+            // Generar columnas de días
+            weekBody.appendChild(timeSlots);
+            
+            for (let i = 0; i < 7; i++) {
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'day-column';
+                
+                for (let hour = 8; hour <= 20; hour++) {
+                    const daySlot = document.createElement('div');
+                    daySlot.className = 'day-slot';
+                    daySlot.id = `day-${i}-hour-${hour}`;
+                    dayColumn.appendChild(daySlot);
+                }
+                
+                weekBody.appendChild(dayColumn);
+            }
+        }
+
+        // Renderizar eventos
+        function renderEvents() {
+            eventos.forEach(evento => {
+                const eventDate = new Date(evento.fecha_hora);
+                const dayOfWeek = eventDate.getDay();
+                const hour = eventDate.getHours();
+                
+                const eventElement = document.createElement('div');
+                eventElement.className = `event ${evento.tipo}`;
+                eventElement.textContent = `${evento.titulo} - ${evento.expedientes?.clientes?.nombre || 'Sin cliente'}`;
+                eventElement.title = evento.descripcion;
+                
+                const daySlot = document.getElementById(`day-${dayOfWeek}-hour-${hour}`);
+                if (daySlot) {
+                    daySlot.appendChild(eventElement);
+                    
+                    // Calcular duración (altura)
+                    const duration = evento.duracion_minutos || 60;
+                    const height = (duration / 60) * 40; // 40px por hora
+                    eventElement.style.height = `${height}px`;
+                    eventElement.style.top = `${(eventDate.getMinutes() / 60) * 40}px`;
+                }
+            });
+        }
+
+        function filterEvents(filter) {
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filtrar eventos (implementación básica)
+            console.log('Filtrar por:', filter);
+            // En una implementación real, aquí se filtraría la lista de eventos
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login-juri.html';
+        }
+    </script>
+</body>
+</html>
