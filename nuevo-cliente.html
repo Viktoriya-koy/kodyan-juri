@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Cliente - Kodyan JURI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --azul-marina: #1A365D;
+            --azul-profundo: #2D3748;
+            --azul-celeste: #4299E1;
+            --gris-carbón: #4A5568;
+            --gris-humo: #EDF2F7;
+            --blanco: #FFFFFF;
+            --dorado-balanza: #D4AF37;
+            --verde-exito: #38A169;
+            --rojo-error: #E53E3E;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gris-humo);
+            color: var(--azul-profundo);
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--azul-marina);
+            color: var(--blanco);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--azul-celeste);
+        }
+
+        .logo-icon {
+            color: var(--dorado-balanza);
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin: 1rem 0;
+        }
+
+        .menu-link {
+            color: var(--blanco);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .menu-link:hover, .menu-link.active {
+            background: var(--azul-celeste);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            color: var(--azul-marina);
+            font-size: 2rem;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--gris-carbón);
+        }
+
+        .breadcrumb a {
+            color: var(--azul-celeste);
+            text-decoration: none;
+        }
+
+        .form-container {
+            background: var(--blanco);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gris-carbón);
+            font-weight: 500;
+        }
+
+        .required::after {
+            content: " *";
+            color: var(--rojo-error);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--gris-humo);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--azul-celeste);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        input.error, select.error, textarea.error {
+            border-color: var(--rojo-error);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--gris-humo);
+        }
+
+        .section-title {
+            color: var(--azul-marina);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--azul-celeste);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--azul-marina);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--gris-humo);
+            color: var(--gris-carbón);
+        }
+
+        .btn-secondary:hover {
+            background: #E2E8F0;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--gris-humo);
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .message.success {
+            background: #C6F6D5;
+            color: #276749;
+            border: 1px solid #9AE6B4;
+        }
+
+        .message.error {
+            background: #FED7D7;
+            color: #C53030;
+            border: 1px solid #FC8181;
+        }
+
+        .help-text {
+            font-size: 0.8rem;
+            color: var(--gris-carbón);
+            margin-top: 0.3rem;
+        }
+
+        .dni-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .dni-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .dni-btn:hover {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚖️</span>
+            <span class="logo-text">Kodyan JURI</span>
+        </div>
+        
+        <ul class="menu">
+            <li class="menu-item">
+                <a href="home-juri.html" class="menu-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="expedientes.html" class="menu-link">
+                    <i class="fas fa-folder"></i> Expedientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html" class="menu-link active">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="agenda.html" class="menu-link">
+                    <i class="fas fa-calendar"></i> Agenda
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="logout()" class="menu-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <div class="breadcrumb">
+            <a href="clientes.html"><i class="fas fa-users"></i> Clientes</a>
+            <span>/</span>
+            <span>Nuevo Cliente</span>
+        </div>
+
+        <header class="header">
+            <h1 class="page-title">
+                <i class="fas fa-user-plus"></i> Registrar Nuevo Cliente
+            </h1>
+        </header>
+
+        <div class="form-container">
+            <div id="message" class="message"></div>
+
+            <form id="clienteForm">
+                <!-- Sección: Datos Personales -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-id-card"></i> Datos Personales
+                    </h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nombre" class="required">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="apellido" class="required">Apellido</label>
+                            <input type="text" id="apellido" name="apellido" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dni" class="required">DNI</label>
+                            <input type="text" id="dni" name="dni" required maxlength="8">
+                            <div class="dni-actions">
+                                <button type="button" class="dni-btn" onclick="validarDNI()">
+                                    <i class="fas fa-check"></i> Validar DNI
+                                </button>
+                                <button type="button" class="dni-btn" onclick="buscarEnRENAPER()">
+                                    <i class="fas fa-search"></i> Buscar en RENAPER
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="estado_civil">Estado Civil</label>
+                            <select id="estado_civil" name="estado_civil">
+                                <option value="">Seleccionar</option>
+                                <option value="soltero">Soltero/a</option>
+                                <option value="casado">Casado/a</option>
+                                <option value="divorciado">Divorciado/a</option>
+                                <option value="viudo">Viudo/a</option>
+                                <option value="concubinato">Unión Convivencial</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nacionalidad">Nacionalidad</label>
+                            <input type="text" id="nacionalidad" name="nacionalidad" value="Argentino">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Contacto -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-address-book"></i> Información de Contacto
+                    </h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="telefono" class="required">Teléfono</label>
+                            <input type="tel" id="telefono" name="telefono" required>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="direccion">Dirección</label>
+                            <input type="text" id="direccion" name="direccion" placeholder="Calle, número, piso, departamento">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="localidad">Localidad</label>
+                            <input type="text" id="localidad" name="localidad">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="provincia">Provincia</label>
+                            <select id="provincia" name="provincia">
+                                <option value="">Seleccionar provincia</option>
+                                <option value="buenos_aires">Buenos Aires</option>
+                                <option value="caba">Ciudad de Buenos Aires</option>
+                                <option value="catamarca">Catamarca</option>
+                                <option value="chaco">Chaco</option>
+                                <option value="chubut">Chubut</option>
+                                <option value="cordoba">Córdoba</option>
+                                <option value="corrientes">Corrientes</option>
+                                <option value="entre_rios">Entre Ríos</option>
+                                <option value="formosa">Formosa</option>
+                                <option value="jujuy">Jujuy</option>
+                                <option value="la_pampa">La Pampa</option>
+                                <option value="la_rioja">La Rioja</option>
+                                <option value="mendoza">Mendoza</option>
+                                <option value="misiones">Misiones</option>
+                                <option value="neuquen">Neuquén</option>
+                                <option value="rio_negro">Río Negro</option>
+                                <option value="salta">Salta</option>
+                                <option value="san_juan">San Juan</option>
+                                <option value="san_luis">San Luis</option>
+                                <option value="santa_cruz">Santa Cruz</option>
+                                <option value="santa_fe">Santa Fe</option>
+                                <option value="santiago_del_estero">Santiago del Estero</option>
+                                <option value="tierra_del_fuego">Tierra del Fuego</option>
+                                <option value="tucuman">Tucumán</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Información Jurídica -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-gavel"></i> Información Jurídica
+                    </h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="tipo_cliente">Tipo de Cliente</label>
+                            <select id="tipo_cliente" name="tipo_cliente">
+                                <option value="activo">Cliente Activo</option>
+                                <option value="potencial">Cliente Potencial</option>
+                                <option value="inactivo">Cliente Inactivo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fuente_cliente">¿Cómo nos conoció?</label>
+                            <select id="fuente_cliente" name="fuente_cliente">
+                                <option value="">Seleccionar</option>
+                                <option value="recomendacion">Recomendación</option>
+                                <option value="publicidad">Publicidad</option>
+                                <option value="redes_sociales">Redes Sociales</option>
+                                <option value="busqueda_web">Búsqueda Web</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="observaciones">Observaciones</label>
+                            <textarea id="observaciones" name="observaciones" rows="4" 
+                                      placeholder="Información adicional relevante sobre el cliente..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        // Validación de DNI
+        function validarDNI() {
+            const dniInput = document.getElementById('dni');
+            const dni = dniInput.value.trim();
+            
+            if (!dni) {
+                mostrarError('Por favor, ingrese un DNI');
+                return;
+            }
+
+            if (!/^\d{7,8}$/.test(dni)) {
+                mostrarError('El DNI debe tener 7 u 8 dígitos numéricos');
+                dniInput.classList.add('error');
+                return;
+            }
+
+            dniInput.classList.remove('error');
+            mostrarExito('DNI válido');
+        }
+
+        // Simulación de búsqueda en RENAPER (para demo)
+        function buscarEnRENAPER() {
+            const dni = document.getElementById('dni').value.trim();
+            
+            if (!dni) {
+                mostrarError('Ingrese un DNI para buscar');
+                return;
+            }
+
+            // En un sistema real, aquí haríamos una API call
+            mostrarExito(`Búsqueda simulada para DNI: ${dni}. En producción se conectaría con RENAPER.`);
+        }
+
+        // Manejo del formulario
+        document.getElementById('clienteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = this.querySelector('button[type="submit"]');
+            const messageDiv = document.getElementById('message');
+
+            // Validaciones básicas
+            const nombre = document.getElementById('nombre').value.trim();
+            const apellido = document.getElementById('apellido').value.trim();
+            const dni = document.getElementById('dni').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+
+            if (!nombre || !apellido || !dni || !telefono) {
+                mostrarError('Por favor, complete todos los campos obligatorios');
+                return;
+            }
+
+            if (!/^\d{7,8}$/.test(dni)) {
+                mostrarError('El DNI debe tener 7 u 8 dígitos numéricos');
+                return;
+            }
+
+            // Mostrar loading
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            btn.disabled = true;
+
+            try {
+                // Obtener usuario logueado
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    throw new Error('No hay usuario logueado');
+                }
+
+                // Verificar si el DNI ya existe
+                const { data: clienteExistente } = await supabase
+                    .from('clientes')
+                    .select('id')
+                    .eq('dni', dni)
+                    .eq('abogado_id', user.id)
+                    .single();
+
+                if (clienteExistente) {
+                    throw new Error('Ya existe un cliente con este DNI en su cartera');
+                }
+
+                // Preparar datos del cliente
+                const clienteData = {
+                    abogado_id: user.id,
+                    nombre: nombre,
+                    apellido: apellido,
+                    dni: dni,
+                    fecha_nacimiento: document.getElementById('fecha_nacimiento').value || null,
+                    estado_civil: document.getElementById('estado_civil').value || null,
+                    nacionalidad: document.getElementById('nacionalidad').value || 'Argentino',
+                    email: document.getElementById('email').value || null,
+                    telefono: telefono,
+                    direccion: document.getElementById('direccion').value || null,
+                    localidad: document.getElementById('localidad').value || null,
+                    provincia: document.getElementById('provincia').value || null,
+                    tipo_cliente: document.getElementById('tipo_cliente').value || 'activo',
+                    fuente_cliente: document.getElementById('fuente_cliente').value || null,
+                    observaciones: document.getElementById('observaciones').value || null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                // Insertar en la base de datos
+                const { data, error } = await supabase
+                    .from('clientes')
+                    .insert([clienteData])
+                    .select();
+
+                if (error) throw error;
+
+                // Éxito
+                mostrarExito('¡Cliente registrado exitosamente!');
+                
+                // Redirigir después de 2 segundos
+                setTimeout(() => {
+                    window.location.href = 'clientes.html';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error guardando cliente:', error);
+                mostrarError('Error: ' + error.message);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar Cliente';
+                btn.disabled = false;
+            }
+        });
+
+        function mostrarExito(mensaje) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${mensaje}`;
+            messageDiv.className = 'message success';
+            messageDiv.style.display = 'block';
+        }
+
+        function mostrarError(mensaje) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${mensaje}`;
+            messageDiv.className = 'message error';
+            messageDiv.style.display = 'block';
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login-juri.html';
+        }
+
+        // Auto-formatear teléfono
+        document.getElementById('telefono').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 10) {
+                value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            }
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>
