@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - Kodyan JURI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --azul-marina: #1A365D;
+            --azul-profundo: #2D3748;
+            --azul-celeste: #4299E1;
+            --gris-carbón: #4A5568;
+            --gris-humo: #EDF2F7;
+            --blanco: #FFFFFF;
+            --dorado-balanza: #D4AF37;
+            --verde-activo: #38A169;
+            --naranja-potencial: #DD6B20;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gris-humo);
+            color: var(--azul-profundo);
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--azul-marina);
+            color: var(--blanco);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--azul-celeste);
+        }
+
+        .logo-icon {
+            color: var(--dorado-balanza);
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin: 1rem 0;
+        }
+
+        .menu-link {
+            color: var(--blanco);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .menu-link:hover, .menu-link.active {
+            background: var(--azul-celeste);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            color: var(--azul-marina);
+            font-size: 2rem;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover {
+            background: var(--azul-marina);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--verde-activo);
+            color: var(--blanco);
+        }
+
+        .search-filters {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--gris-humo);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .clientes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .cliente-card {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            border-left: 4px solid var(--azul-celeste);
+        }
+
+        .cliente-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .cliente-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .cliente-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--azul-marina);
+        }
+
+        .cliente-tipo {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .tipo-activo { background: #C6F6D5; color: #276749; }
+        .tipo-potencial { background: #FEEBC8; color: #DD6B20; }
+        .tipo-inactivo { background: #E2E8F0; color: #4A5568; }
+
+        .cliente-info {
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.5rem;
+            color: var(--gris-carbón);
+        }
+
+        .cliente-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--gris-humo);
+            border-radius: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--azul-marina);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gris-carbón);
+        }
+
+        .cliente-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--gris-humo);
+            background: var(--blanco);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            color: var(--gris-carbón);
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2rem;
+            color: var(--gris-carbón);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .clientes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚖️</span>
+            <span class="logo-text">Kodyan JURI</span>
+        </div>
+        
+        <ul class="menu">
+            <li class="menu-item">
+                <a href="home-juri.html" class="menu-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="expedientes.html" class="menu-link">
+                    <i class="fas fa-folder"></i> Expedientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html" class="menu-link active">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="agenda.html" class="menu-link">
+                    <i class="fas fa-calendar"></i> Agenda
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="finanzas.html" class="menu-link">
+                    <i class="fas fa-chart-line"></i> Finanzas
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="logout()" class="menu-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <header class="header">
+            <h1 class="page-title">
+                <i class="fas fa-users"></i> Gestión de Clientes
+            </h1>
+            <div class="page-actions">
+                <a href="nuevo-cliente.html" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Nuevo Cliente
+                </a>
+                <button class="btn btn-success" onclick="exportarClientes()">
+                    <i class="fas fa-download"></i> Exportar
+                </button>
+            </div>
+        </header>
+
+        <!-- Búsqueda y Filtros -->
+        <section class="search-filters">
+            <div class="search-bar">
+                <input type="text" id="searchInput" class="search-input" 
+                       placeholder="Buscar por nombre, email, teléfono o DNI...">
+                <button class="btn btn-primary" onclick="buscarClientes()">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+            
+            <div class="filters">
+                <button class="filter-btn active" onclick="filtrarClientes('todos')">Todos</button>
+                <button class="filter-btn" onclick="filtrarClientes('activos')">Activos</button>
+                <button class="filter-btn" onclick="filtrarClientes('potenciales')">Potenciales</button>
+                <button class="filter-btn" onclick="filtrarClientes('inactivos')">Inactivos</button>
+                <button class="filter-btn" onclick="filtrarClientes('morosos')">Con deuda</button>
+            </div>
+        </section>
+
+        <!-- Grid de Clientes -->
+        <div class="clientes-grid" id="clientes-container">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando clientes...
+            </div>
+        </div>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        let todosLosClientes = [];
+        let filtroActual = 'todos';
+
+        // Cargar clientes del abogado logueado
+        async function cargarClientes() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                window.location.href = 'login-juri.html';
+                return;
+            }
+
+            try {
+                const { data: clientes, error } = await supabase
+                    .from('clientes')
+                    .select(`
+                        *,
+                        expedientes (id, estado),
+                        pagos (monto, estado)
+                    `)
+                    .eq('abogado_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                todosLosClientes = clientes || [];
+                mostrarClientes(todosLosClientes);
+
+            } catch (error) {
+                console.error('Error cargando clientes:', error);
+                document.getElementById('clientes-container').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h3>Error al cargar clientes</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function mostrarClientes(clientes) {
+            const container = document.getElementById('clientes-container');
+            
+            if (!clientes || clientes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; color: var(--gris-carbón);"></i>
+                        <h3>No hay clientes registrados</h3>
+                        <p>Comienza agregando tu primer cliente</p>
+                        <a href="nuevo-cliente.html" class="btn btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-user-plus"></i> Agregar Primer Cliente
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            clientes.forEach(cliente => {
+                const expedientesActivos = cliente.expedientes?.filter(e => e.estado === 'activo').length || 0;
+                const totalDeuda = cliente.pagos?.filter(p => p.estado === 'pendiente')
+                    .reduce((sum, pago) => sum + pago.monto, 0) || 0;
+                
+                const tipoClass = `tipo-${cliente.estado || 'activo'}`;
+                const tipoText = cliente.estado === 'potencial' ? 'Potencial' : 
+                               cliente.estado === 'inactivo' ? 'Inactivo' : 'Activo';
+
+                html += `
+                    <div class="cliente-card">
+                        <div class="cliente-header">
+                            <div class="cliente-name">${cliente.nombre} ${cliente.apellido}</div>
+                            <span class="cliente-tipo ${tipoClass}">${tipoText}</span>
+                        </div>
+                        
+                        <div class="cliente-info">
+                            <div class="info-item">
+                                <i class="fas fa-id-card"></i>
+                                <span>DNI: ${cliente.dni}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>${cliente.email || 'Sin email'}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-phone"></i>
+                                <span>${cliente.telefono || 'Sin teléfono'}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${cliente.direccion || 'Sin dirección'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cliente-stats">
+                            <div class="stat">
+                                <div class="stat-value">${expedientesActivos}</div>
+                                <div class="stat-label">Expedientes</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">$${totalDeuda.toLocaleString()}</div>
+                                <div class="stat-label">Deuda</div>
+                            </div>
+                        </div>
+                        
+                        <div class="cliente-actions">
+                            <button class="action-btn" onclick="verCliente('${cliente.id}')">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="action-btn" onclick="editarCliente('${cliente.id}')">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="action-btn" onclick="nuevoExpediente('${cliente.id}')">
+                                <i class="fas fa-folder-plus"></i> Expediente
+                            </button>
+                            <button class="action-btn" onclick="contactarCliente('${cliente.id}')">
+                                <i class="fas fa-phone"></i> Contactar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function buscarClientes() {
+            const termino = document.getElementById('searchInput').value.toLowerCase();
+            const clientesFiltrados = todosLosClientes.filter(cliente => 
+                cliente.nombre.toLowerCase().includes(termino) ||
+                cliente.apellido.toLowerCase().includes(termino) ||
+                cliente.email?.toLowerCase().includes(termino) ||
+                cliente.telefono?.includes(termino) ||
+                cliente.dni?.includes(termino)
+            );
+            mostrarClientes(clientesFiltrados);
+        }
+
+        function filtrarClientes(tipo) {
+            filtroActual = tipo;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            let clientesFiltrados = todosLosClientes;
+            
+            switch(tipo) {
+                case 'activos':
+                    clientesFiltrados = todosLosClientes.filter(c => c.estado === 'activo');
+                    break;
+                case 'potenciales':
+                    clientesFiltrados = todosLosClientes.filter(c => c.estado === 'potencial');
+                    break;
+                case 'inactivos':
+                    clientesFiltrados = todosLosClientes.filter(c => c.estado === 'inactivo');
+                    break;
+                case 'morosos':
+                    clientesFiltrados = todosLosClientes.filter(cliente => {
+                        const deuda = cliente.pagos?.filter(p => p.estado === 'pendiente')
+                            .reduce((sum, pago) => sum + pago.monto, 0) || 0;
+                        return deuda > 0;
+                    });
+                    break;
+            }
+            
+            mostrarClientes(clientesFiltrados);
+        }
+
+        function verCliente(id) {
+            window.location.href = `cliente-detalle.html?id=${id}`;
+        }
+
+        function editarCliente(id) {
+            window.location.href = `editar-cliente.html?id=${id}`;
+        }
+
+        function nuevoExpediente(clienteId) {
+            window.location.href = `nuevo-expediente.html?cliente=${clienteId}`;
+        }
+
+        function contactarCliente(clienteId) {
+            const cliente = todosLosClientes.find(c => c.id === clienteId);
+            if (cliente?.telefono) {
+                window.open(`tel:${cliente.telefono}`);
+            } else if (cliente?.email) {
+                window.open(`mailto:${cliente.email}`);
+            } else {
+                alert('No hay información de contacto disponible');
+            }
+        }
+
+        function exportarClientes() {
+            // Función para exportar a CSV
+            alert('Función de exportación en desarrollo...');
+        }
+
+        // Cargar clientes al iniciar
+        document.addEventListener('DOMContentLoaded', cargarClientes);
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login-juri.html';
+        }
+    </script>
+</body>
+</html>
