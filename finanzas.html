@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas - Kodyan JURI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --azul-marina: #1A365D;
+            --azul-profundo: #2D3748;
+            --azul-celeste: #4299E1;
+            --gris-carbón: #4A5568;
+            --gris-humo: #EDF2F7;
+            --blanco: #FFFFFF;
+            --dorado-balanza: #D4AF37;
+            --verde-ingreso: #38A169;
+            --rojo-gasto: #E53E3E;
+            --naranja-pendiente: #DD6B20;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gris-humo);
+            color: var(--azul-profundo);
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--azul-marina);
+            color: var(--blanco);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--azul-celeste);
+        }
+
+        .logo-icon {
+            color: var(--dorado-balanza);
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin: 1rem 0;
+        }
+
+        .menu-link {
+            color: var(--blanco);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .menu-link:hover, .menu-link.active {
+            background: var(--azul-celeste);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            color: var(--azul-marina);
+            font-size: 2rem;
+        }
+
+        .period-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .period-btn.active {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover {
+            background: var(--azul-marina);
+        }
+
+        .btn-success {
+            background: var(--verde-ingreso);
+            color: var(--blanco);
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .kpi-label {
+            color: var(--gris-carbón);
+            font-size: 0.9rem;
+        }
+
+        .ingreso { color: var(--verde-ingreso); }
+        .gasto { color: var(--rojo-gasto); }
+        .pendiente { color: var(--naranja-pendiente); }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            color: var(--azul-marina);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* Transactions Table */
+        .transactions-section {
+            background: var(--blanco);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            color: var(--azul-marina);
+            font-size: 1.3rem;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gris-humo);
+        }
+
+        .transactions-table th {
+            background: var(--gris-humo);
+            color: var(--gris-carbón);
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-paid { background: #C6F6D5; color: #276749; }
+        .status-pending { background: #FEEBC8; color: #DD6B20; }
+        .status-overdue { background: #FED7D7; color: #C53030; }
+
+        .amount {
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--azul-celeste);
+            background: var(--blanco);
+            color: var(--azul-celeste);
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: var(--azul-celeste);
+            color: var(--blanco);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚖️</span>
+            <span class="logo-text">Kodyan JURI</span>
+        </div>
+        
+        <ul class="menu">
+            <li class="menu-item">
+                <a href="home-juri.html" class="menu-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="expedientes.html" class="menu-link">
+                    <i class="fas fa-folder"></i> Expedientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html" class="menu-link">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="agenda.html" class="menu-link">
+                    <i class="fas fa-calendar"></i> Agenda
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="finanzas.html" class="menu-link active">
+                    <i class="fas fa-chart-line"></i> Finanzas
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" onclick="logout()" class="menu-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <header class="header">
+            <h1 class="page-title">
+                <i class="fas fa-chart-line"></i> Dashboard Financiero
+            </h1>
+            
+            <div class="period-selector">
+                <button class="period-btn active" onclick="changePeriod('month')">Este Mes</button>
+                <button class="period-btn" onclick="changePeriod('quarter')">Este Trimestre</button>
+                <button class="period-btn" onclick="changePeriod('year')">Este Año</button>
+                <select id="customPeriod" onchange="changeCustomPeriod()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--azul-celeste);">
+                    <option value="">Personalizado</option>
+                    <option value="last_month">Mes Anterior</option>
+                    <option value="last_quarter">Trimestre Anterior</option>
+                    <option value="last_year">Año Anterior</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Ingresos del Periodo</div>
+                <div class="kpi-value ingreso" id="ingresosPeriodo">$0</div>
+                <div class="kpi-label" id="variacionIngresos">+0% vs periodo anterior</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">Honorarios Pendientes</div>
+                <div class="kpi-value pendiente" id="honorariosPendientes">$0</div>
+                <div class="kpi-label" id="clientesMorosos">0 clientes con deuda</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">Gastos del Periodo</div>
+                <div class="kpi-value gasto" id="gastosPeriodo">$0</div>
+                <div class="kpi-label" id="ratioGastos">0% de los ingresos</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">Rentabilidad Neta</div>
+                <div class="kpi-value ingreso" id="rentabilidadNeta">$0</div>
+                <div class="kpi-label" id="margenRentabilidad">0% de margen</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">Evolución de Ingresos</h3>
+                <div class="chart-container">
+                    <canvas id="ingresosChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3 class="chart-title">Distribución por Tipo de Caso</h3>
+                <div class="chart-container">
+                    <canvas id="tipoCasoChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3 class="chart-title">Estados de Cuenta</h3>
+                <div class="chart-container">
+                    <canvas id="estadosChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3 class="chart-title">Proyección de Ingresos</h3>
+                <div class="chart-container">
+                    <canvas id="proyeccionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Transacciones -->
+        <section class="transactions-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-exchange-alt"></i> Últimas Transacciones
+                </h3>
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterTransactions('all')">Todas</button>
+                    <button class="filter-btn" onclick="filterTransactions('paid')">Pagadas</button>
+                    <button class="filter-btn" onclick="filterTransactions('pending')">Pendientes</button>
+                    <button class="filter-btn" onclick="filterTransactions('overdue')">Vencidas</button>
+                </div>
+            </div>
+
+            <table class="transactions-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Concepto</th>
+                        <th>Expediente</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th>Vencimiento</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando transacciones...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="facturas.html" class="btn btn-primary">
+                    <i class="fas fa-file-invoice-dollar"></i> Ver Todas las Facturas
+                </a>
+                <a href="nueva-factura.html" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Nueva Factura
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        let currentPeriod = 'month';
+        let financialData = {};
+
+        // Inicializar finanzas
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarDatosFinancieros();
+            inicializarGraficos();
+        });
+
+        // Cambiar período
+        function changePeriod(period) {
+            currentPeriod = period;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            cargarDatosFinancieros();
+        }
+
+        function changeCustomPeriod() {
+            const select = document.getElementById('customPeriod');
+            if (select.value) {
+                currentPeriod = select.value;
+                cargarDatosFinancieros();
+                select.value = '';
+            }
+        }
+
+        // Cargar datos financieros
+        async function cargarDatosFinancieros() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                window.location.href = 'login-juri.html';
+                return;
+            }
+
+            try {
+                // Obtener datos del período actual
+                const { data: transacciones, error } = await supabase
+                    .from('transacciones_financieras')
+                    .select(`
+                        *,
+                        expedientes (numero_expediente, materia),
+                        clientes (nombre, apellido)
+                    `)
+                    .eq('abogado_id', user.id)
+                    .order('fecha_emision', { ascending: false });
+
+                if (error) throw error;
+
+                financialData = transacciones || [];
+                actualizarKPIs();
+                actualizarTablaTransacciones();
+                actualizarGraficos();
+
+            } catch (error) {
+                console.error('Error cargando datos financieros:', error);
+            }
+        }
+
+        // Actualizar KPIs
+        function actualizarKPIs() {
+            const ingresos = financialData.filter(t => t.tipo === 'ingreso' && t.estado === 'pagado')
+                .reduce((sum, t) => sum + t.monto, 0);
+            
+            const pendientes = financialData.filter(t => t.tipo === 'ingreso' && t.estado === 'pendiente')
+                .reduce((sum, t) => sum + t.monto, 0);
+            
+            const gastos = financialData.filter(t => t.tipo === 'gasto')
+                .reduce((sum, t) => sum + t.monto, 0);
+            
+            const rentabilidad = ingresos - gastos;
+            const margen = ingresos > 0 ? ((rentabilidad / ingresos) * 100) : 0;
+
+            document.getElementById('ingresosPeriodo').textContent = `$${ingresos.toLocaleString()}`;
+            document.getElementById('honorariosPendientes').textContent = `$${pendientes.toLocaleString()}`;
+            document.getElementById('gastosPeriodo').textContent = `$${gastos.toLocaleString()}`;
+            document.getElementById('rentabilidadNeta').textContent = `$${rentabilidad.toLocaleString()}`;
+            document.getElementById('margenRentabilidad').textContent = `${margen.toFixed(1)}% de margen`;
+            
+            // Calcular clientes morosos
+            const clientesMorosos = new Set(
+                financialData.filter(t => t.estado === 'pendiente').map(t => t.cliente_id)
+            ).size;
+            document.getElementById('clientesMorosos').textContent = `${clientesMorosos} clientes con deuda`;
+        }
+
+        // Actualizar tabla de transacciones
+        function actualizarTablaTransacciones() {
+            const tbody = document.getElementById('transactionsBody');
+            
+            if (financialData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--gris-carbón);">
+                            <i class="fas fa-file-invoice-dollar" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            No hay transacciones registradas
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            financialData.slice(0, 10).forEach(transaccion => {
+                const fecha = new Date(transaccion.fecha_emision).toLocaleDateString('es-AR');
+                const vencimiento = transaccion.fecha_vencimiento ? 
+                    new Date(transaccion.fecha_vencimiento).toLocaleDateString('es-AR') : '-';
+                
+                let statusClass = 'status-paid';
+                let statusText = 'Pagado';
+                
+                if (transaccion.estado === 'pendiente') {
+                    const hoy = new Date();
+                    const vencimientoDate = new Date(transaccion.fecha_vencimiento);
+                    statusClass = hoy > vencimientoDate ? 'status-overdue' : 'status-pending';
+                    statusText = hoy > vencimientoDate ? 'Vencido' : 'Pendiente';
+                }
+
+                html += `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>${transaccion.clientes?.nombre} ${transaccion.clientes?.apellido}</td>
+                        <td>${transaccion.concepto}</td>
+                        <td>${transaccion.expedientes?.numero_expediente || '-'}</td>
+                        <td class="amount">$${transaccion.monto.toLocaleString()}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${vencimiento}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Inicializar gráficos
+        function inicializarGraficos() {
+            // Gráfico de ingresos
+            window.ingresosChart = new Chart(document.getElementById('ingresosChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Ingresos',
+                        data: [0, 0, 0, 0, 0, 0],
+                        borderColor: '#38A169',
+                        backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Otros gráficos se inicializarían aquí...
+        }
+
+        function actualizarGraficos() {
+            // En una implementación real, aquí se actualizarían los gráficos con datos reales
+            console.log('Actualizando gráficos con datos:', financialData);
+        }
+
+        function filterTransactions(filter) {
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filtrar transacciones
+            console.log('Filtrar transacciones por:', filter);
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login-juri.html';
+        }
+    </script>
+</body>
+</html>
